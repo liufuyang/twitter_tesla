@@ -92,7 +92,9 @@ def parse(cls, api, raw):
     return status
 
 if __name__ == '__main__':
-    logging.basicConfig(filename='./log/twetter_gen.log',level=logging.INFO)
+    logging.basicConfig(filename='./log/twetter_gen.log',
+        level=logging.INFO,
+        format='%(asctime)s --> %(message)s')
     parser = get_parser()
     args = parser.parse_args()
     
