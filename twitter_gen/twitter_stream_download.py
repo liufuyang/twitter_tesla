@@ -1,11 +1,3 @@
-# To run this code, first edit config.py with your configuration, then:
-#
-# mkdir data
-# python twitter_stream_download.py -q apple -d data
-# 
-# It will produce the list of tweets for the query "apple" 
-# in the file data/stream_apple.json
-
 import tweepy
 import os
 from tweepy import Stream
@@ -14,8 +6,10 @@ from tweepy.streaming import StreamListener
 import time
 import argparse
 import string
-import config
 import json
+
+import db_migration
+import psycopg2
 
 def get_parser():
     """Get parser for command line arguments."""
@@ -24,52 +18,55 @@ def get_parser():
                         "--query",
                         dest="query",
                         help="Query/Filter",
-                        default='-')
-    parser.add_argument("-d",
-                        "--data-dir",
-                        dest="data_dir",
-                        help="Output/Data Directory")
+                        default='')
     return parser
 
 
 class MyListener(StreamListener):
     """Custom StreamListener for streaming data."""
 
-    def __init__(self, data_dir, query, api):
-        query_fname = format_filename(query)
-        self.outfile = "%s/stream_%s.json" % (data_dir, query_fname)
-
+    def __init__(self, conn, api):
+        pass
+        
     def on_data(self, data):
         try:
             #f.write(data['created_at'].encode('utf-8') + '\n' + data['text'].encode('utf-8') + ' \n \n')
             info = json.loads(data)
-            print(json.dumps(info['created_at'], indent=4, encoding='utf-8'))
-            print(json.dumps(info['text'], indent=4, encoding='utf-8'))
+            t_created_at = json.dumps(info['created_at'], indent=4, encoding='utf-8')
+            t_tweet = json.dumps(info['text'], indent=4, encoding='utf-8')
             
-            x = api.rate_limit_status()
-            print(json.dumps(x['resources']['application']['/application/rate_limit_status'],indent=4))
+            # print(t_created_at)
+            # print(t_tweet)
+            # x = api.rate_limit_status()
+            # print(json.dumps(x['resources']['application']['/application/rate_limit_status'],indent=4))
+            # print("----------------------------------")
             
+            self.save_tweet(info['text'], info['created_at'])
+
             return True
         except BaseException as e:
-            print("Error on_data: %s" % str(e))
-            time.sleep(5)
+            print("Error on_data and saving tweet: %s" % str(e))
+            time.sleep(10)
         return True
-
+    
+    def save_tweet(self, tweet, created_at):
+        try:
+            cursor = conn.cursor()
+            query_str =  "INSERT INTO tweets (tweet, created_at) VALUES (%s, %s);"
+            cursor.execute(query_str, (tweet, created_at))
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            print("Error when saving tweet: %s" % str(e))
+            
     def on_error(self, status):
+        if status_code == 420:
+            # returning True in on_data disconnects the stream
+            # wait for 16 minutes
+            time.sleep(16*60)
+            return True
         print(status)
         return True
-
-
-def format_filename(fname):
-    """Convert file name into a safe string.
-
-    Arguments:
-        fname -- the file name to convert
-    Return:
-        String -- converted file name
-    """
-    return ''.join(convert_valid(one_char) for one_char in fname)
-
 
 def convert_valid(one_char):
     """Convert a character into '_' if invalid.
@@ -95,22 +92,43 @@ if __name__ == '__main__':
     parser = get_parser()
     args = parser.parse_args()
     
+    # First create database:
+    db_host = os.getenv('DB_HOST', "localhost")
+    db_port = os.getenv('DB_PORT', "5432")
+    db_user = os.getenv('DB_USER', "postgres")
+    db_name = os.getenv('DB_NAME', "postgres")
+    db_pass = os.getenv('DB_PASS', "password")
+    db_migration.run_migrations(db_host, db_port, db_user, db_pass, db_name)
+    
     consumer_key = os.getenv('TW_CONSUMER_KEY', "default_value")
     consumer_secret = os.getenv('TW_CONSUMER_SECRET', "default_value")
     access_token = os.getenv('TW_ACCESS_TOKEN', "default_value")
     access_secret = os.getenv('TW_ACCESS_SECRET', "default_value")
-    
     auth = OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_token, access_secret)
     
     api = tweepy.API(auth)
     x = api.rate_limit_status()
-    print(json.dumps(x, indent=4))
-    # 
+    #print(json.dumps(x, indent=4))
     #print(json.dumps(x['resources']['statuses']['/statuses/home_timeline'],indent=4))
     
     print(json.dumps(x['resources']['application']['/application/rate_limit_status'],indent=4))
     
-
-    twitter_stream = Stream(auth, MyListener(args.data_dir, args.query, api))
-    twitter_stream.filter(track=[args.query])
+    # Getting database connection
+    try:
+        conn = psycopg2.connect(
+            dbname=db_name,
+            user=db_user,
+            host=db_host,
+            port=db_port,
+            password=db_pass)
+            
+    except Exception as e:
+        print "I am unable to connect to the database"
+        print str(e)
+    
+    query1 = os.getenv('TW_QUERY_1', 'tesla')
+    query2 = os.getenv('TW_QUERY_2', 'TeslaMotors')
+    twitter_stream = Stream(auth, MyListener(conn, api))
+    twitter_stream.filter(track=[query1, query2])
+    print('Service for getting tweets started.')
