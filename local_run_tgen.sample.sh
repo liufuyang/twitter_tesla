@@ -30,3 +30,5 @@ docker run --name twitter-tesla-tgen \
 	-e "DB_PASS=password" \
 	-e "DB_NAME=twitter_tesla" \
 	liufuyang/twitter-tesla-tgen:latest
+
+# http://stackoverflow.com/questions/31249112/allow-docker-container-to-connect-to-a-local-host-postgres-database
