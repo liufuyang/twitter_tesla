@@ -33,16 +33,16 @@ class MyListener(StreamListener):
         try:
             #f.write(data['created_at'].encode('utf-8') + '\n' + data['text'].encode('utf-8') + ' \n \n')
             info = json.loads(data)
-            t_created_at = json.dumps(info['created_at'], indent=4, encoding='utf-8')
-            t_tweet = json.dumps(info['text'], indent=4, encoding='utf-8')
-            
+            #t_created_at = json.dumps(info['created_at'], indent=4, encoding='utf-8')
+            #t_tweet = json.dumps(info['text'], indent=4, encoding='utf-8')
             # print(t_created_at)
             # print(t_tweet)
+            #print info['text'].encode('ascii', 'ignore')
             # x = api.rate_limit_status()
             # print(json.dumps(x['resources']['application']['/application/rate_limit_status'],indent=4))
             # print("----------------------------------")
-            
-            self.save_tweet(info['text'], info['created_at'])
+            if not info['retweeted'] and not info['text'].startswith('RT'):
+                self.save_tweet(info['text'], info['created_at'])
             return True
         except BaseException as e:
             print("Error on_data and saving tweet: %s" % str(e))
@@ -51,14 +51,32 @@ class MyListener(StreamListener):
         return True
     
     def save_tweet(self, tweet, created_at):
+        if len(tweet) > 50:
+            t_hash = hash(tweet[:50])
+        else:
+            t_hash = hash(tweet)
+        
+        cursor = conn.cursor()
+        
         try:
-            cursor = conn.cursor()
-            query_str =  "INSERT INTO tweets (tweet, created_at) VALUES (%s, %s);"
-            cursor.execute(query_str, (tweet, created_at))
+            query_str = """
+                SELECT * FROM tweets AS t
+                WHERE t.t_hash_int = %s
+                LIMIT 1;
+            """
+            cursor.execute(query_str, (t_hash,))
+        except:
+            logging.info("Error executing select")
+        
+        if cursor.fetchone() != None: # Duplicated, return
+            return
+            
+        try:
+            query_str =  "INSERT INTO tweets (tweet, created_at, t_hash_int) VALUES (%s, %s, %s);"
+            cursor.execute(query_str, (tweet, created_at, t_hash))
             conn.commit()
         except Exception as e:
             conn.rollback()
-            print("Error when saving tweet to db: %s" % str(e))
             logging.info("Error when saving tweet to db: %s" % str(e))
             
     def on_error(self, status):
@@ -92,7 +110,7 @@ def parse(cls, api, raw):
     return status
 
 if __name__ == '__main__':
-    logging.basicConfig(filename='./log/twetter_gen.log',
+    logging.basicConfig(filename='./log/twitter_gen.log',
         level=logging.INFO,
         format='%(asctime)s [%(levelname)s]: %(message)s')
     parser = get_parser()

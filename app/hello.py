@@ -7,7 +7,7 @@ import psycopg2.extras
 import os
 import logging
 
-logging.basicConfig(filename='./log/twetter_ws.log',
+logging.basicConfig(filename='./log/twitter_ws.log',
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s]: %(message)s')
 
@@ -24,9 +24,7 @@ def tesla_tweets():
     query_str = """
         SELECT created_at, 
             tweet AS text, 
-            label_s AS positive,
-            pred_s AS predict,
-            pred_p AS predict_prob
+            t_hash_int
         FROM tweets
         ORDER BY created_at DESC
         LIMIT 1000
