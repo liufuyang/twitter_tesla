@@ -3,16 +3,6 @@ eval $(docker-machine env default)
 
 ./local_build.sh
 
-docker stop twitter-tesla-postgres
-docker rm twitter-tesla-postgres
-
-docker run --name twitter-tesla-postgres \
-	-e POSTGRES_PASSWORD=password \
-	-e POSTGRES_USER=postgres \
-	-e POSTGRES_DB=twitter_tesla \
-	-p 5435:5432 \
-	-d postgres:9.3
-
 docker stop twitter-tesla-tgen
 docker rm twitter-tesla-tgen
 
@@ -29,6 +19,9 @@ docker run --name twitter-tesla-tgen \
 	-e "DB_USER=postgres" \
 	-e "DB_PASS=password" \
 	-e "DB_NAME=twitter_tesla" \
+	-e "TW_QUERY_1=tesla" \
+	-e "TW_QUERY_2=TeslaMotors" \
+	-v /Users/log:/twitter_gen/log \
 	liufuyang/twitter-tesla-tgen:latest
 
 # http://stackoverflow.com/questions/31249112/allow-docker-container-to-connect-to-a-local-host-postgres-database
