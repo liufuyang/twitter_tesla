@@ -7,6 +7,7 @@
 # in the file data/stream_apple.json
 
 import tweepy
+import os
 from tweepy import Stream
 from tweepy import OAuthHandler
 from tweepy.streaming import StreamListener
@@ -93,8 +94,15 @@ def parse(cls, api, raw):
 if __name__ == '__main__':
     parser = get_parser()
     args = parser.parse_args()
-    auth = OAuthHandler(config.consumer_key, config.consumer_secret)
-    auth.set_access_token(config.access_token, config.access_secret)
+    
+    consumer_key = os.getenv('TW_CONSUMER_KEY', "default_value")
+    consumer_secret = os.getenv('TW_CONSUMER_SECRET', "default_value")
+    access_token = os.getenv('TW_ACCESS_TOKEN', "default_value")
+    access_secret = os.getenv('TW_ACCESS_SECRET', "default_value")
+    
+    auth = OAuthHandler(consumer_key, consumer_secret)
+    auth.set_access_token(access_token, access_secret)
+    
     api = tweepy.API(auth)
     x = api.rate_limit_status()
     print(json.dumps(x, indent=4))

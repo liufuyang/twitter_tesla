@@ -1,6 +1,7 @@
 # Project related
 z_local_deploy
 config.py
+local_run_tgen.sh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
