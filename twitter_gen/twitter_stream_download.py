@@ -94,7 +94,7 @@ def parse(cls, api, raw):
 if __name__ == '__main__':
     logging.basicConfig(filename='./log/twetter_gen.log',
         level=logging.INFO,
-        format='%(asctime)s --> %(message)s')
+        format='%(asctime)s [%(levelname)s]: %(message)s')
     parser = get_parser()
     args = parser.parse_args()
     
