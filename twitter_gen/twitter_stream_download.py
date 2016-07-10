@@ -10,6 +10,7 @@ import json
 
 import db_migration
 import psycopg2
+import logging
 
 def get_parser():
     """Get parser for command line arguments."""
@@ -42,10 +43,10 @@ class MyListener(StreamListener):
             # print("----------------------------------")
             
             self.save_tweet(info['text'], info['created_at'])
-
             return True
         except BaseException as e:
             print("Error on_data and saving tweet: %s" % str(e))
+            logging.info("Error on_data and saving tweet: %s" % str(e))
             time.sleep(10)
         return True
     
@@ -57,12 +58,14 @@ class MyListener(StreamListener):
             conn.commit()
         except Exception as e:
             conn.rollback()
-            print("Error when saving tweet: %s" % str(e))
+            print("Error when saving tweet to db: %s" % str(e))
+            logging.info("Error when saving tweet to db: %s" % str(e))
             
     def on_error(self, status):
         if status_code == 420:
             # returning True in on_data disconnects the stream
             # wait for 16 minutes
+            logging.info("On_Error: 420. Waiting for 16 minutes before doing anything else...")
             time.sleep(16*60)
             return True
         print(status)
@@ -89,6 +92,7 @@ def parse(cls, api, raw):
     return status
 
 if __name__ == '__main__':
+    logging.basicConfig(filename='./log/twetter_gen.log',level=logging.INFO)
     parser = get_parser()
     args = parser.parse_args()
     
@@ -130,5 +134,5 @@ if __name__ == '__main__':
     query1 = os.getenv('TW_QUERY_1', 'tesla')
     query2 = os.getenv('TW_QUERY_2', 'TeslaMotors')
     twitter_stream = Stream(auth, MyListener(conn, api))
-    twitter_stream.filter(track=[query1, query2])
-    print('Service for getting tweets started.')
+    twitter_stream.filter(languages=["en"], track=[query1, query2])
+    logging.info('Service for getting tweets started...')

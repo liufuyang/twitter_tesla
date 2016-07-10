@@ -1,6 +1,6 @@
 # Project related
 z_local_deploy
-config.py
+z_log
 local_run_tgen.sh
 
 # Byte-compiled / optimized / DLL files

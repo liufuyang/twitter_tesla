@@ -5,6 +5,7 @@ RUN pip install yoyo-migrations
 RUN pip install psycopg2
 
 COPY twitter_gen /twitter_gen
+VOLUME ["/twitter_gen/log"]
 
 WORKDIR /twitter_gen
 
