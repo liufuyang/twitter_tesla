@@ -9,9 +9,9 @@ cp -R local_dev/* ${DEPLOY_DIR}
 # docker_webservice
 cp -R app ${DEPLOY_DIR}/docker_webservice/app
 
-docker build --no-cache -t liufuyang/twitter-tesla-webservice:latest ${DEPLOY_DIR}/docker_webservice
+docker build -t liufuyang/twitter-tesla-webservice:latest ${DEPLOY_DIR}/docker_webservice
 
 # docker_twitter_gen
 cp -R twitter_gen ${DEPLOY_DIR}/docker_twitter_gen/twitter_gen
 
-docker build --no-cache -t liufuyang/twitter-tesla-tgen:latest ${DEPLOY_DIR}/docker_twitter_gen
+docker build -t liufuyang/twitter-tesla-tgen:latest ${DEPLOY_DIR}/docker_twitter_gen

@@ -31,10 +31,11 @@ def tesla_tweets():
     """
     try:
         cur.execute(query_str)
+        result = {'tweets': cur.fetchall()}
+        return jsonify(**result)
     except:
         logging.info("Error executing select")
-    result = {'tweets': cur.fetchall()}
-    return jsonify(**result)
+        return '{}'
 
 @app.route('/tesla_tweets/count')
 def tesla_count():
@@ -42,10 +43,11 @@ def tesla_count():
     cur = conn.cursor()
     try:
         cur.execute('select count(*) from tweets')
+        result = cur.fetchall()
+        return render_template('tweets_count.html', counts=result)
     except:
         logging.info("Error executing select")
-    result = cur.fetchall()
-    return render_template('tweets_count.html', counts=result)
+        return '0'
 
 def get_db_conn():
     # Getting database connection
